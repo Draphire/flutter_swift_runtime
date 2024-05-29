@@ -10,6 +10,7 @@ import '../../controllers/character_controller.dart';
 import '../components/loading.dart';
 import '../components/list.dart';
 import '../components/search.dart';
+import '../pages/map_view_page.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({Key? key}) : super(key: key);
@@ -50,6 +51,15 @@ class _HomePageState extends State<HomePage> {
     });
   }
 
+  void _navigateToMap() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => MapViewPage(cameras: _cameras),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -86,15 +96,13 @@ class _HomePageState extends State<HomePage> {
                     ? const Center(child: MyLoading())
                     : _isGridView
                         ? GridView.builder(
-                            padding:
-                                const EdgeInsets.symmetric(horizontal: 8.0),
+                            padding: const EdgeInsets.all(8.0),
                             gridDelegate:
                                 const SliverGridDelegateWithFixedCrossAxisCount(
                               crossAxisCount: 2,
                               crossAxisSpacing: 8.0,
                               mainAxisSpacing: 8.0,
                             ),
-                            shrinkWrap: true,
                             itemBuilder: (context, index) {
                               return MyList(
                                   camera: _camerasDisplay[index],
@@ -114,6 +122,28 @@ class _HomePageState extends State<HomePage> {
             ),
           ],
         ),
+      ),
+      bottomNavigationBar: BottomNavigationBar(
+        items: const [
+          BottomNavigationBarItem(
+            icon: Icon(Icons.list),
+            label: 'List',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.map),
+            label: 'Map',
+          ),
+        ],
+        currentIndex: _isGridView ? 1 : 0,
+        onTap: (index) {
+          if (index == 0 && _isGridView) {
+            _toggleView();
+          } else if (index == 1 && !_isGridView) {
+            _toggleView();
+          } else if (index == 1) {
+            _navigateToMap();
+          }
+        },
       ),
     );
   }
