@@ -8,26 +8,50 @@ import '../pages/character_details_page.dart';
 
 class MyList extends StatelessWidget {
   final LTACameraObject camera;
-  final bool isGridView;
+  final bool
+      isGridView; // New parameter to distinguish between list and grid view
 
-  const MyList({Key? key, required this.camera, this.isGridView = false})
+  const MyList({Key? key, required this.camera, required this.isGridView})
       : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    return isGridView
-        ? _buildGridViewItem(context)
-        : _buildListViewItem(context);
+    return isGridView ? _buildGridItem(context) : _buildListItem(context);
   }
 
-  Widget _buildListViewItem(BuildContext context) {
+  Widget _buildListItem(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 10.0, vertical: 5.0),
       child: Card(
-        shape:
-            RoundedRectangleBorder(borderRadius: BorderRadius.circular(15.0)),
-        elevation: 2.0, // Reduced elevation for a cleaner look
-        child: InkWell(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(15.0),
+        ),
+        elevation: 5,
+        child: ListTile(
+          contentPadding: const EdgeInsets.all(8.0),
+          leading: Hero(
+            tag: camera.cameraId,
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(10.0),
+              child: Image.network(
+                camera.image,
+                fit: BoxFit.cover,
+                width: 80.0,
+                height: 80.0,
+              ),
+            ),
+          ),
+          title: Text(
+            camera.name,
+            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          ),
+          subtitle: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(camera.cameraId),
+              Text(camera.timestamp),
+            ],
+          ),
           onTap: () {
             Navigator.push(
               context,
@@ -36,67 +60,12 @@ class MyList extends StatelessWidget {
               ),
             );
           },
-          child: Row(
-            children: [
-              Hero(
-                tag: camera.cameraId,
-                child: ClipRRect(
-                  borderRadius: BorderRadius.only(
-                    topLeft: Radius.circular(15.0),
-                    bottomLeft: Radius.circular(15.0),
-                  ),
-                  child: Image.network(
-                    camera.image,
-                    width: 120.0, // Fixed width for the image
-                    height: 120.0, // Fixed height for the image
-                    fit: BoxFit.cover,
-                  ),
-                ),
-              ),
-              Expanded(
-                child: Padding(
-                  padding: const EdgeInsets.all(10.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        camera.name,
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 16.0,
-                        ),
-                        maxLines: 2, // Limit the number of lines for the name
-                        overflow: TextOverflow
-                            .ellipsis, // Add ellipsis if text overflows
-                      ),
-                      SizedBox(height: 5.0),
-                      Text(
-                        camera.cameraId,
-                        maxLines:
-                            1, // Limit the number of lines for the cameraId
-                        overflow: TextOverflow
-                            .ellipsis, // Add ellipsis if text overflows
-                      ),
-                      SizedBox(height: 5.0),
-                      Text(
-                        camera.timestamp,
-                        maxLines:
-                            1, // Limit the number of lines for the timestamp
-                        overflow: TextOverflow
-                            .ellipsis, // Add ellipsis if text overflows
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ],
-          ),
         ),
       ),
     );
   }
 
-  Widget _buildGridViewItem(BuildContext context) {
+  Widget _buildGridItem(BuildContext context) {
     return GestureDetector(
       onTap: () {
         Navigator.push(
@@ -107,24 +76,23 @@ class MyList extends StatelessWidget {
         );
       },
       child: Card(
-        shape:
-            RoundedRectangleBorder(borderRadius: BorderRadius.circular(15.0)),
-        elevation: 2.0, // Reduced elevation for a cleaner look
+        elevation: 2.0,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(8.0),
+        ),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Hero(
               tag: camera.cameraId,
               child: ClipRRect(
-                borderRadius: BorderRadius.only(
-                  topLeft: Radius.circular(15.0),
-                  topRight: Radius.circular(15.0),
+                borderRadius: const BorderRadius.vertical(
+                  top: Radius.circular(8.0),
                 ),
                 child: Image.network(
                   camera.image,
+                  height: 120.0, // Adjust height as needed
                   fit: BoxFit.cover,
-                  height: 150.0, // Increased height for larger image
-                  width: double.infinity,
                 ),
               ),
             ),
@@ -135,25 +103,22 @@ class MyList extends StatelessWidget {
                 children: [
                   Text(
                     camera.name,
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
+                    style: const TextStyle(
                       fontSize: 16.0,
+                      fontWeight: FontWeight.w600,
                     ),
-                    maxLines: 2, // Limit the number of lines for the name
-                    overflow:
-                        TextOverflow.ellipsis, // Add ellipsis if text overflows
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
+                  const SizedBox(height: 4.0),
                   Text(
                     camera.cameraId,
-                    maxLines: 1, // Limit the number of lines for the cameraId
-                    overflow:
-                        TextOverflow.ellipsis, // Add ellipsis if text overflows
-                  ),
-                  Text(
-                    camera.timestamp,
-                    maxLines: 1, // Limit the number of lines for the timestamp
-                    overflow:
-                        TextOverflow.ellipsis, // Add ellipsis if text overflows
+                    style: const TextStyle(
+                      fontSize: 14.0,
+                      fontWeight: FontWeight.w400,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ],
               ),

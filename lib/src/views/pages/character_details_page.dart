@@ -25,15 +25,16 @@ class CharacterDetailsPage extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Flexible(
-              child: Hero(
-                tag: camera.cameraId,
-                child: Container(
-                  width: double.infinity,
-                  child: Image.network(
-                    camera.image,
-                    fit: BoxFit.cover,
-                  ),
+            Hero(
+              tag: camera.cameraId,
+              child: Container(
+                width: double.infinity,
+                height: 250.0, // Adjust the height as needed
+                color: Colors.black, // Background color to highlight the image
+                child: Image.network(
+                  camera.image,
+                  fit: BoxFit
+                      .contain, // Ensures the full image is visible without cropping
                 ),
               ),
             ),

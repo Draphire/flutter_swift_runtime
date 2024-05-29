@@ -3,10 +3,10 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 import '../../models/character_model.dart';
 
-class MapViewPage extends StatelessWidget {
+class MapPage extends StatelessWidget {
   final List<LTACameraObject> cameras;
 
-  const MapViewPage({Key? key, required this.cameras}) : super(key: key);
+  const MapPage({Key? key, required this.cameras}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
