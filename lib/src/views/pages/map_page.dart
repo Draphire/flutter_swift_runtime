@@ -34,7 +34,7 @@ class _MapPageState extends State<MapPage> {
 
   ClusterManager _initClusterManager() {
     return ClusterManager<LTACameraObject>(widget.cameras, _updateMarkers,
-        markerBuilder: _markerBuilder);
+        markerBuilder: _markerBuilder, stopClusteringZoom: 13.0);
   }
 
   // void _initializeClusters() {
@@ -129,7 +129,7 @@ class _MapPageState extends State<MapPage> {
 
     final PictureRecorder pictureRecorder = PictureRecorder();
     final Canvas canvas = Canvas(pictureRecorder);
-    final Paint paint1 = Paint()..color = Colors.orange;
+    final Paint paint1 = Paint()..color = Colors.cyan;
     final Paint paint2 = Paint()..color = Colors.white;
 
     canvas.drawCircle(Offset(size / 2, size / 2), size / 2.0, paint1);
@@ -161,9 +161,9 @@ class _MapPageState extends State<MapPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Map View'),
-      ),
+      // appBar: AppBar(
+      //   title: const Text('Map View'),
+      // ),
       body: GoogleMap(
         onMapCreated: _onMapCreated,
         initialCameraPosition: const CameraPosition(
