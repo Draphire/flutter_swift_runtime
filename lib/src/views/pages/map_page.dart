@@ -3,12 +3,12 @@ import 'dart:ui';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:google_maps_cluster_manager/google_maps_cluster_manager.dart';
 
 // Model
 import '../../models/character_model.dart';
+import '../../views/components/custom_info_window.dart';
 
 class MapPage extends StatefulWidget {
   final List<LTACameraObject> cameras;
@@ -20,11 +20,12 @@ class MapPage extends StatefulWidget {
 }
 
 class _MapPageState extends State<MapPage> {
-  // late GoogleMapController mapController;
   Completer<GoogleMapController> _controller = Completer();
   late ClusterManager _manager;
-  // final Set<Marker> _markers = {};
   Set<Marker> markers = Set();
+  bool _isInfoWindowVisible = false;
+  LatLng? _infoWindowPosition;
+  LTACameraObject? _selectedCamera;
 
   @override
   void initState() {
@@ -37,92 +38,50 @@ class _MapPageState extends State<MapPage> {
         markerBuilder: _markerBuilder, stopClusteringZoom: 13.0);
   }
 
-  // void _initializeClusters() {
-  //   List<ClusterItem<LTACameraObject>> clusterItems = widget.cameras
-  //       .map((camera) => camera as ClusterItem<LTACameraObject>)
-  //       .toList();
-
-  //   _manager = ClusterManager<LTACameraObject>(
-  //     clusterItems,
-  //     _updateMarkers,
-  //     markerBuilder: _markerBuilder,
-  //     initialZoom: 11.0,
-  //   );
-
-  // }
-
-  // void _initializeClusters() {
-  //   _manager = ClusterManager<LTACameraObject>(
-  //     widget.cameras,
-  //     _updateMarkers,
-  //     markerBuilder: _markerBuilder,
-  //     initialZoom: 11.0,
-  //   );
-  // }
   void _updateMarkers(Set<Marker> markers) {
     print('Updated ${markers.length} markers');
     setState(() {
       this.markers = markers;
     });
-    // _manager.updateMarkers(markers);
-    // _manager.updateMap();
   }
-  // void _updateMarkers(Set<Marker> markers) {
-  //   setState(() {
-  //     _markers.clear();
-  //     _markers.addAll(markers);
-  //   });
-  // }
 
   void _onMapCreated(GoogleMapController controller) {
     _controller.complete(controller);
-
     _manager.setMapId(controller.mapId);
-    // _manager.(controller.mapId);
   }
-
-  // Future<Marker> _markerBuilder(Cluster<LTACameraObject> cluster) async {
-  // Future<Marker> Function(Cluster<LTACameraObject>)
-  // Future<Marker> Function(dynamic) get _markerBuilder => (cluster) async {
-  //       if (cluster.isMultiple) {
-  //         return Marker(
-  //           markerId: MarkerId(cluster.getId()),
-  //           position: cluster.location,
-  //           icon: BitmapDescriptor.defaultMarkerWithHue(
-  //               BitmapDescriptor.hueGreen),
-  //           infoWindow: InfoWindow(
-  //             title: "Cluster",
-  //             snippet: "Cluster with ${cluster.count} cameras",
-  //           ),
-  //         );
-  //       }
-
-  //       final camera = cluster.items.first;
-  //       return Marker(
-  //         markerId: MarkerId(camera!.cameraId),
-  //         position: cluster.location,
-  //         icon:
-  //             BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueGreen),
-  //         infoWindow: InfoWindow(
-  //           title: camera.name,
-  //           snippet: camera.timestamp,
-  //         ),
-  //       );
-  //     };
 
   Future<Marker> Function(Cluster<LTACameraObject>) get _markerBuilder =>
       (cluster) async {
+        if (cluster.isMultiple) {
+          return Marker(
+            markerId: MarkerId(cluster.getId()),
+            position: cluster.location,
+            onTap: () {
+              print('---- $cluster');
+              cluster.items.forEach((p) => print(p));
+            },
+            icon: await _getMarkerBitmap(cluster.isMultiple ? 125 : 75,
+                text: cluster.isMultiple ? cluster.count.toString() : null),
+          );
+        }
+
+        final camera = cluster.items.first;
+
         return Marker(
-          markerId: MarkerId(cluster.getId()),
+          markerId: MarkerId(camera.cameraId),
           position: cluster.location,
-          onTap: () {
-            print('---- $cluster');
-            cluster.items.forEach((p) => print(p));
-          },
-          icon: await _getMarkerBitmap(cluster.isMultiple ? 125 : 75,
-              text: cluster.isMultiple ? cluster.count.toString() : null),
+          icon: await _getMarkerBitmap(75),
+          onTap: () => _onMarkerTapped(camera),
         );
       };
+
+  void _onMarkerTapped(LTACameraObject camera) {
+    setState(() {
+      _isInfoWindowVisible = true;
+      _infoWindowPosition = LatLng(camera.lat, camera.lon);
+      _selectedCamera = camera;
+    });
+  }
 
   Future<BitmapDescriptor> _getMarkerBitmap(int size, {String? text}) async {
     if (kIsWeb) size = (size / 2).floor();
@@ -161,19 +120,49 @@ class _MapPageState extends State<MapPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      // appBar: AppBar(
-      //   title: const Text('Map View'),
-      // ),
-      body: GoogleMap(
-        onMapCreated: _onMapCreated,
-        initialCameraPosition: const CameraPosition(
-          target:
-              LatLng(1.3521, 103.8198), // Singapore's latitude and longitude
-          zoom: 11,
+      body: GestureDetector(
+        onTap: () {
+          if (_isInfoWindowVisible) {
+            setState(() {
+              _isInfoWindowVisible = false;
+            });
+          }
+        },
+        child: Stack(
+          children: [
+            GoogleMap(
+              onMapCreated: _onMapCreated,
+              initialCameraPosition: const CameraPosition(
+                target: LatLng(
+                    1.3521, 103.8198), // Singapore's latitude and longitude
+                zoom: 11,
+              ),
+              markers: markers,
+              onTap: (LatLng position) {
+                if (_isInfoWindowVisible) {
+                  setState(() {
+                    _isInfoWindowVisible = false;
+                  });
+                }
+              },
+              onCameraMove: _manager.onCameraMove,
+              onCameraIdle: _manager.updateMap,
+            ),
+            if (_isInfoWindowVisible && _selectedCamera != null)
+              Positioned(
+                left: MediaQuery.of(context).size.width / 2 - 100,
+                top: MediaQuery.of(context).size.height / 2 - 150,
+                child: GestureDetector(
+                  onTap: () {},
+                  child: CustomInfoWindow(
+                    title: _selectedCamera!.name,
+                    timestamp: _selectedCamera!.timestamp,
+                    imageUrl: _selectedCamera!.image,
+                  ),
+                ),
+              ),
+          ],
         ),
-        markers: markers,
-        onCameraMove: _manager.onCameraMove,
-        onCameraIdle: _manager.updateMap,
       ),
     );
   }
