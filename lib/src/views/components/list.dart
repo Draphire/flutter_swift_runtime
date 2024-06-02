@@ -10,13 +10,11 @@ import '../components/search.dart';
 class MyList extends StatefulWidget {
   final List<LTACameraObject> cameras;
   final Function() fetchCameraData;
-  final Function(String) onSearch;
 
   const MyList({
     Key? key,
     required this.cameras,
     required this.fetchCameraData,
-    required this.onSearch,
   }) : super(key: key);
 
   @override
@@ -25,6 +23,25 @@ class MyList extends StatefulWidget {
 
 class _MyListState extends State<MyList> {
   bool isGridView = false;
+  List<LTACameraObject> _camerasDisplay = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _camerasDisplay = widget.cameras;
+  }
+
+  void _onSearch(String searchText) {
+    searchText = searchText.toLowerCase();
+    setState(() {
+      _camerasDisplay = widget.cameras.where((u) {
+        var nameLowerCase = u.name.toLowerCase();
+        var nicknameLowerCase = u.cameraId.toLowerCase();
+        return nameLowerCase.contains(searchText) ||
+            nicknameLowerCase.contains(searchText);
+      }).toList();
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -39,7 +56,7 @@ class _MyListState extends State<MyList> {
                   child: MySearch(
                     hintText: 'Search camera name',
                     onChanged: (searchText) {
-                      widget.onSearch(searchText);
+                      _onSearch(searchText);
                     },
                   ),
                 ),
@@ -58,6 +75,9 @@ class _MyListState extends State<MyList> {
             child: RefreshIndicator(
               onRefresh: () async {
                 await widget.fetchCameraData();
+                setState(() {
+                  _camerasDisplay = widget.cameras;
+                });
               },
               child: isGridView
                   ? _buildGridView(context)
@@ -71,9 +91,9 @@ class _MyListState extends State<MyList> {
 
   Widget _buildListView(BuildContext context) {
     return ListView.builder(
-      itemCount: widget.cameras.length,
+      itemCount: _camerasDisplay.length,
       itemBuilder: (context, index) {
-        final camera = widget.cameras[index];
+        final camera = _camerasDisplay[index];
         return _buildListItem(context, camera);
       },
     );
@@ -85,9 +105,9 @@ class _MyListState extends State<MyList> {
         crossAxisCount: 2, // Adjust the number of columns as needed
         childAspectRatio: 0.75, // Adjust the aspect ratio as needed
       ),
-      itemCount: widget.cameras.length,
+      itemCount: _camerasDisplay.length,
       itemBuilder: (context, index) {
-        final camera = widget.cameras[index];
+        final camera = _camerasDisplay[index];
         return _buildGridItem(context, camera);
       },
     );

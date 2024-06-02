@@ -3,7 +3,7 @@ import 'dart:ui';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart' hide Cluster;
 import 'package:google_maps_cluster_manager/google_maps_cluster_manager.dart';
 
 // Model
@@ -14,14 +14,14 @@ import '../../views/components/list.dart'; // Import the new list view
 class MapPage extends StatefulWidget {
   final List<LTACameraObject> cameras;
   final Function() fetchCameraData;
-  final Function(String) onSearch;
+  // final Function(String) onSearch;
 
-  const MapPage(
-      {Key? key,
-      required this.cameras,
-      required this.fetchCameraData,
-      required this.onSearch})
-      : super(key: key);
+  const MapPage({
+    Key? key,
+    required this.cameras,
+    required this.fetchCameraData,
+    // required this.onSearch
+  }) : super(key: key);
 
   @override
   _MapPageState createState() => _MapPageState();
@@ -116,10 +116,10 @@ class _MapPageState extends State<MapPage> {
             widget.fetchCameraData();
             // _updateClusterManager();
           },
-          onSearch: (input) {
-            widget.onSearch(input);
-            // _updateClusterManager();
-          },
+          // onSearch: (input) {
+          // widget.onSearch(input);
+          // _updateClusterManager();
+          // },
         ),
       ).whenComplete(() {
         // _updateClusterManager();
