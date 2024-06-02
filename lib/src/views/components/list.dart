@@ -1,4 +1,3 @@
-import 'package:api_search_list/src/views/components/search.dart';
 import 'package:flutter/material.dart';
 
 // Model
@@ -6,66 +5,75 @@ import '../../models/character_model.dart';
 
 // Page
 import '../pages/character_details_page.dart';
+import '../components/search.dart';
 
-class MyList extends StatelessWidget {
+class MyList extends StatefulWidget {
   final List<LTACameraObject> cameras;
   final Function() fetchCameraData;
   final Function(String) onSearch;
-  const MyList(
-      {Key? key,
-      required this.cameras,
-      required this.fetchCameraData,
-      required this.onSearch})
-      : super(key: key);
 
-  // List<LTACameraObject> _camerasDisplay = <LTACameraObject>[];
+  const MyList({
+    Key? key,
+    required this.cameras,
+    required this.fetchCameraData,
+    required this.onSearch,
+  }) : super(key: key);
+
+  @override
+  _MyListState createState() => _MyListState();
+}
+
+class _MyListState extends State<MyList> {
+  bool isGridView = false;
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-        appBar: AppBar(
-          title: const Text('Singapore Traffic Cameras'),
-          // actions: [
-          //   IconButton(
-          //     icon: Icon(_isGridView ? Icons.list : Icons.grid_view),
-          //     onPressed: () {
-          //       setState(() {
-          //         _isGridView = !_isGridView;
-          //       });
-          //     },
-          //   ),
-          // ],
-        ),
-        body: Column(
-          children: [
-            MySearch(
-              hintText: 'Search camera name',
-              onChanged: (searchText) {
-                onSearch(searchText);
+      body: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(12.0),
+            child: Row(
+              children: [
+                Expanded(
+                  child: MySearch(
+                    hintText: 'Search camera name',
+                    onChanged: (searchText) {
+                      widget.onSearch(searchText);
+                    },
+                  ),
+                ),
+                IconButton(
+                  icon: Icon(isGridView ? Icons.list : Icons.grid_view),
+                  onPressed: () {
+                    setState(() {
+                      isGridView = !isGridView;
+                    });
+                  },
+                ),
+              ],
+            ),
+          ),
+          Expanded(
+            child: RefreshIndicator(
+              onRefresh: () async {
+                await widget.fetchCameraData();
               },
+              child: isGridView
+                  ? _buildGridView(context)
+                  : _buildListView(context),
             ),
-            Expanded(
-              child: RefreshIndicator(
-                onRefresh: () => fetchCameraData(),
-                child:
-                    // MyList(
-                    //     cameras: cameras,
-                    //     isGridView: isGridView,),
-                    // isGridView
-                    //     ? _buildGridView(context)
-                    //     :
-                    _buildListView(context),
-              ),
-            ),
-          ],
-        ));
+          ),
+        ],
+      ),
+    );
   }
 
   Widget _buildListView(BuildContext context) {
     return ListView.builder(
-      itemCount: cameras.length,
+      itemCount: widget.cameras.length,
       itemBuilder: (context, index) {
-        final camera = cameras[index];
+        final camera = widget.cameras[index];
         return _buildListItem(context, camera);
       },
     );
@@ -73,13 +81,13 @@ class MyList extends StatelessWidget {
 
   Widget _buildGridView(BuildContext context) {
     return GridView.builder(
-      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 2, // Adjust the number of columns as needed
         childAspectRatio: 0.75, // Adjust the aspect ratio as needed
       ),
-      itemCount: cameras.length,
+      itemCount: widget.cameras.length,
       itemBuilder: (context, index) {
-        final camera = cameras[index];
+        final camera = widget.cameras[index];
         return _buildGridItem(context, camera);
       },
     );

@@ -53,6 +53,13 @@ class _MapPageState extends State<MapPage> {
     });
   }
 
+  void _updateClusterManager() {
+    setState(() {
+      _manager = _initClusterManager();
+      _manager.updateMap();
+    });
+  }
+
   void _onMapCreated(GoogleMapController controller) {
     _controller.complete(controller);
     _manager.setMapId(controller.mapId);
@@ -69,19 +76,54 @@ class _MapPageState extends State<MapPage> {
         );
       };
 
+  // void _onClusterTapped(Cluster<LTACameraObject> cluster) {
+  //   if (cluster.isMultiple) {
+  //     // Navigator.push(
+  //     //   context,
+  //     //   MaterialPageRoute(
+  //     //     builder: (context) => MyList(
+  //     //       cameras: cluster.items.toList(),
+  //     //       fetchCameraData: () => widget.fetchCameraData(),
+  //     //       onSearch: (input) => widget.onSearch(
+  //     //           input), // Set this to true if you want to show grid view
+  //     //     ),
+  //     //   ),
+  //     // );
+  //     showModalBottomSheet(
+  //       context: context,
+  //       builder: (context) => MyList(
+  //         cameras: cluster.items.toList(),
+  //         fetchCameraData: () => widget.fetchCameraData(),
+  //         onSearch: (input) => widget.onSearch(input),
+  //       ),
+  //     ).whenComplete(() {
+  //       // Re-initialize the cluster manager with the updated camera data
+  //       _manager = _initClusterManager();
+  //     });
+  //     ;
+  //   } else {
+  //     _onMarkerTapped(cluster.items.first);
+  //   }
+  // }
+
   void _onClusterTapped(Cluster<LTACameraObject> cluster) {
     if (cluster.isMultiple) {
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) => MyList(
-            cameras: cluster.items.toList(),
-            fetchCameraData: () => widget.fetchCameraData(),
-            onSearch: (input) => widget.onSearch(
-                input), // Set this to true if you want to show grid view
-          ),
+      showModalBottomSheet(
+        context: context,
+        builder: (context) => MyList(
+          cameras: cluster.items.toList(),
+          fetchCameraData: () {
+            widget.fetchCameraData();
+            // _updateClusterManager();
+          },
+          onSearch: (input) {
+            widget.onSearch(input);
+            // _updateClusterManager();
+          },
         ),
-      );
+      ).whenComplete(() {
+        // _updateClusterManager();
+      });
     } else {
       _onMarkerTapped(cluster.items.first);
     }

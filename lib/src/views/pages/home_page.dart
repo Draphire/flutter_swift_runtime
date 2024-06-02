@@ -34,18 +34,32 @@ class _HomePageState extends State<HomePage> {
     _fetchCameraData();
   }
 
+  // Future<void> _fetchCameraData() async {
+  //   setState(() {
+  //     _isLoading = true;
+  //   });
+
+  //   getCameraObjectList().then((value) {
+  //     setState(() {
+  //       _isLoading = false;
+  //       _cameras.clear();
+  //       _cameras.addAll(value);
+  //       _camerasDisplay = _cameras;
+  //     });
+  //   });
+  // }
+
   Future<void> _fetchCameraData() async {
     setState(() {
       _isLoading = true;
     });
 
-    getCameraObjectList().then((value) {
-      setState(() {
-        _isLoading = false;
-        _cameras.clear();
-        _cameras.addAll(value);
-        _camerasDisplay = _cameras;
-      });
+    List<LTACameraObject> cameras = await getCameraObjectList();
+    setState(() {
+      _isLoading = false;
+      _cameras.clear();
+      _cameras.addAll(cameras);
+      _camerasDisplay = _cameras;
     });
   }
 
