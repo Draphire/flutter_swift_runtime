@@ -9,11 +9,19 @@ import 'package:google_maps_cluster_manager/google_maps_cluster_manager.dart';
 // Model
 import '../../models/character_model.dart';
 import '../../views/components/custom_info_window.dart';
+import '../../views/components/list.dart'; // Import the new list view
 
 class MapPage extends StatefulWidget {
   final List<LTACameraObject> cameras;
+  final Function() fetchCameraData;
+  final Function(String) onSearch;
 
-  const MapPage({Key? key, required this.cameras}) : super(key: key);
+  const MapPage(
+      {Key? key,
+      required this.cameras,
+      required this.fetchCameraData,
+      required this.onSearch})
+      : super(key: key);
 
   @override
   _MapPageState createState() => _MapPageState();
@@ -52,28 +60,32 @@ class _MapPageState extends State<MapPage> {
 
   Future<Marker> Function(Cluster<LTACameraObject>) get _markerBuilder =>
       (cluster) async {
-        if (cluster.isMultiple) {
-          return Marker(
-            markerId: MarkerId(cluster.getId()),
-            position: cluster.location,
-            onTap: () {
-              print('---- $cluster');
-              cluster.items.forEach((p) => print(p));
-            },
-            icon: await _getMarkerBitmap(cluster.isMultiple ? 125 : 75,
-                text: cluster.isMultiple ? cluster.count.toString() : null),
-          );
-        }
-
-        final camera = cluster.items.first;
-
         return Marker(
-          markerId: MarkerId(camera.cameraId),
+          markerId: MarkerId(cluster.getId()),
           position: cluster.location,
-          icon: await _getMarkerBitmap(75),
-          onTap: () => _onMarkerTapped(camera),
+          onTap: () => _onClusterTapped(cluster),
+          icon: await _getMarkerBitmap(cluster.isMultiple ? 125 : 75,
+              text: cluster.isMultiple ? cluster.count.toString() : null),
         );
       };
+
+  void _onClusterTapped(Cluster<LTACameraObject> cluster) {
+    if (cluster.isMultiple) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => MyList(
+            cameras: cluster.items.toList(),
+            fetchCameraData: () => widget.fetchCameraData(),
+            onSearch: (input) => widget.onSearch(
+                input), // Set this to true if you want to show grid view
+          ),
+        ),
+      );
+    } else {
+      _onMarkerTapped(cluster.items.first);
+    }
+  }
 
   void _onMarkerTapped(LTACameraObject camera) {
     setState(() {
@@ -117,52 +129,77 @@ class _MapPageState extends State<MapPage> {
     return BitmapDescriptor.fromBytes(data.buffer.asUint8List());
   }
 
+  void _showCameraDetails(LTACameraObject camera) {
+    showModalBottomSheet(
+      context: context,
+      builder: (BuildContext context) {
+        return Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              Image.network(camera.image),
+              SizedBox(height: 16.0),
+              Text(camera.name,
+                  style:
+                      TextStyle(fontSize: 20.0, fontWeight: FontWeight.bold)),
+              SizedBox(height: 8.0),
+              Text(camera.timestamp),
+              SizedBox(height: 8.0),
+              Text('Camera ID: ${camera.cameraId}'),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  void _closeInfoWindow() {
+    if (_isInfoWindowVisible) {
+      setState(() {
+        _isInfoWindowVisible = false;
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: GestureDetector(
-        onTap: () {
-          if (_isInfoWindowVisible) {
-            setState(() {
-              _isInfoWindowVisible = false;
-            });
-          }
-        },
-        child: Stack(
-          children: [
-            GoogleMap(
-              onMapCreated: _onMapCreated,
-              initialCameraPosition: const CameraPosition(
-                target: LatLng(
-                    1.3521, 103.8198), // Singapore's latitude and longitude
-                zoom: 11,
-              ),
-              markers: markers,
-              onTap: (LatLng position) {
-                if (_isInfoWindowVisible) {
-                  setState(() {
-                    _isInfoWindowVisible = false;
-                  });
-                }
-              },
-              onCameraMove: _manager.onCameraMove,
-              onCameraIdle: _manager.updateMap,
+      body: Stack(
+        children: [
+          GoogleMap(
+            onMapCreated: _onMapCreated,
+            initialCameraPosition: const CameraPosition(
+              target: LatLng(
+                  1.3521, 103.8198), // Singapore's latitude and longitude
+              zoom: 11,
             ),
-            if (_isInfoWindowVisible && _selectedCamera != null)
-              Positioned(
-                left: MediaQuery.of(context).size.width / 2 - 100,
-                top: MediaQuery.of(context).size.height / 2 - 150,
-                child: GestureDetector(
-                  onTap: () {},
-                  child: CustomInfoWindow(
-                    title: _selectedCamera!.name,
-                    timestamp: _selectedCamera!.timestamp,
-                    imageUrl: _selectedCamera!.image,
-                  ),
+            markers: markers,
+            onCameraMove: _manager.onCameraMove,
+            onCameraIdle: _manager.updateMap,
+
+            // onCameraMoveStarted: () {
+            //   if (_isInfoWindowVisible) _closeInfoWindow();
+            // },
+            trafficEnabled: true,
+            onTap: (LatLng position) {
+              _closeInfoWindow();
+            },
+          ),
+          if (_isInfoWindowVisible && _selectedCamera != null)
+            Positioned(
+              left: MediaQuery.of(context).size.width / 2 - 100,
+              top: MediaQuery.of(context).size.height / 2 - 150,
+              child: GestureDetector(
+                onTap: () => _showCameraDetails(_selectedCamera!),
+                child: CustomInfoWindow(
+                  title: _selectedCamera!.name,
+                  timestamp: _selectedCamera!.timestamp,
+                  imageUrl: _selectedCamera!.image,
                 ),
               ),
-          ],
-        ),
+            ),
+        ],
       ),
     );
   }

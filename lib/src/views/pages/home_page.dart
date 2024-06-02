@@ -49,6 +49,18 @@ class _HomePageState extends State<HomePage> {
     });
   }
 
+  void _onSearch(String searchText) {
+    searchText = searchText.toLowerCase();
+    setState(() {
+      _camerasDisplay = _cameras.where((u) {
+        var nameLowerCase = u.name.toLowerCase();
+        var nicknameLowerCase = u.cameraId.toLowerCase();
+        return nameLowerCase.contains(searchText) ||
+            nicknameLowerCase.contains(searchText);
+      }).toList();
+    });
+  }
+
   void _onItemTapped(int index) {
     setState(() {
       _selectedIndex = index;
@@ -60,16 +72,6 @@ class _HomePageState extends State<HomePage> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Singapore Traffic Cameras'),
-        actions: [
-          IconButton(
-            icon: Icon(_isGridView ? Icons.list : Icons.grid_view),
-            onPressed: () {
-              setState(() {
-                _isGridView = !_isGridView;
-              });
-            },
-          ),
-        ],
       ),
       body: SafeArea(
         child: _isLoading
@@ -77,32 +79,16 @@ class _HomePageState extends State<HomePage> {
             : IndexedStack(
                 index: _selectedIndex,
                 children: [
-                  Column(
-                    children: [
-                      MySearch(
-                        hintText: 'Search camera name',
-                        onChanged: (searchText) {
-                          searchText = searchText.toLowerCase();
-                          setState(() {
-                            _camerasDisplay = _cameras.where((u) {
-                              var nameLowerCase = u.name.toLowerCase();
-                              var nicknameLowerCase = u.cameraId.toLowerCase();
-                              return nameLowerCase.contains(searchText) ||
-                                  nicknameLowerCase.contains(searchText);
-                            }).toList();
-                          });
-                        },
-                      ),
-                      Expanded(
-                        child: RefreshIndicator(
-                          onRefresh: _fetchCameraData,
-                          child:
-                              _isGridView ? _buildGridView() : _buildListView(),
-                        ),
-                      ),
-                    ],
+                  MyList(
+                    cameras: _camerasDisplay,
+                    fetchCameraData: _fetchCameraData,
+                    onSearch: _onSearch,
                   ),
-                  MapPage(cameras: _cameras),
+                  MapPage(
+                    cameras: _camerasDisplay,
+                    fetchCameraData: _fetchCameraData,
+                    onSearch: _onSearch,
+                  ),
                 ],
               ),
       ),
@@ -123,28 +109,28 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  Widget _buildListView() {
-    return ListView.builder(
-      itemBuilder: (context, index) {
-        return MyList(camera: _camerasDisplay[index], isGridView: false);
-      },
-      itemCount: _camerasDisplay.length,
-    );
-  }
+  // Widget _buildListView() {
+  //   return ListView.builder(
+  //     itemBuilder: (context, index) {
+  //       return MyList(camera: _camerasDisplay[index], isGridView: false);
+  //     },
+  //     itemCount: _camerasDisplay.length,
+  //   );
+  // }
 
-  Widget _buildGridView() {
-    return GridView.builder(
-      gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
-        maxCrossAxisExtent: 200.0, // Adjust the maximum width of each item here
-        childAspectRatio:
-            0.75, // Adjust the aspect ratio to provide more height
-        crossAxisSpacing: 10.0,
-        mainAxisSpacing: 10.0,
-      ),
-      itemBuilder: (context, index) {
-        return MyList(camera: _camerasDisplay[index], isGridView: true);
-      },
-      itemCount: _camerasDisplay.length,
-    );
-  }
+  // Widget _buildGridView() {
+  //   return GridView.builder(
+  //     gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
+  //       maxCrossAxisExtent: 200.0, // Adjust the maximum width of each item here
+  //       childAspectRatio:
+  //           0.75, // Adjust the aspect ratio to provide more height
+  //       crossAxisSpacing: 10.0,
+  //       mainAxisSpacing: 10.0,
+  //     ),
+  //     itemBuilder: (context, index) {
+  //       // return MyList(camera: _camerasDisplay[index], isGridView: true);
+  //     },
+  //     itemCount: _camerasDisplay.length,
+  //   );
+  // }
 }
