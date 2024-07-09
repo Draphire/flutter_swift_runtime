@@ -150,7 +150,11 @@ class _MyListState extends State<MyList> {
             Navigator.push(
               context,
               MaterialPageRoute(
-                builder: (context) => CharacterDetailsPage(camera: camera),
+                builder: (context) => CharacterDetailsPage(
+                    camera: camera,
+                    fetchCameraData: () async {
+                      await widget.fetchCameraData();
+                    }),
               ),
             );
           },
@@ -165,7 +169,12 @@ class _MyListState extends State<MyList> {
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (context) => CharacterDetailsPage(camera: camera),
+            builder: (context) => CharacterDetailsPage(
+              camera: camera,
+              fetchCameraData: () async {
+                await widget.fetchCameraData();
+              },
+            ),
           ),
         );
       },

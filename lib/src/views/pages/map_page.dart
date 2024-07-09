@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:ui';
 
+import 'package:api_search_list/src/views/pages/character_details_page.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart' hide Cluster;
@@ -14,13 +15,11 @@ import '../../views/components/list.dart'; // Import the new list view
 class MapPage extends StatefulWidget {
   final List<LTACameraObject> cameras;
   final Function() fetchCameraData;
-  // final Function(String) onSearch;
 
   const MapPage({
     Key? key,
     required this.cameras,
     required this.fetchCameraData,
-    // required this.onSearch
   }) : super(key: key);
 
   @override
@@ -34,6 +33,10 @@ class _MapPageState extends State<MapPage> {
   bool _isInfoWindowVisible = false;
   LatLng? _infoWindowPosition;
   LTACameraObject? _selectedCamera;
+  CameraPosition _initialCameraPosition = CameraPosition(
+    target: LatLng(1.3521, 103.8198), // Singapore's latitude and longitude
+    zoom: 11,
+  );
 
   @override
   void initState() {
@@ -76,56 +79,24 @@ class _MapPageState extends State<MapPage> {
         );
       };
 
-  // void _onClusterTapped(Cluster<LTACameraObject> cluster) {
-  //   if (cluster.isMultiple) {
-  //     // Navigator.push(
-  //     //   context,
-  //     //   MaterialPageRoute(
-  //     //     builder: (context) => MyList(
-  //     //       cameras: cluster.items.toList(),
-  //     //       fetchCameraData: () => widget.fetchCameraData(),
-  //     //       onSearch: (input) => widget.onSearch(
-  //     //           input), // Set this to true if you want to show grid view
-  //     //     ),
-  //     //   ),
-  //     // );
-  //     showModalBottomSheet(
-  //       context: context,
-  //       builder: (context) => MyList(
-  //         cameras: cluster.items.toList(),
-  //         fetchCameraData: () => widget.fetchCameraData(),
-  //         onSearch: (input) => widget.onSearch(input),
-  //       ),
-  //     ).whenComplete(() {
-  //       // Re-initialize the cluster manager with the updated camera data
-  //       _manager = _initClusterManager();
-  //     });
-  //     ;
-  //   } else {
-  //     _onMarkerTapped(cluster.items.first);
-  //   }
-  // }
-
   void _onClusterTapped(Cluster<LTACameraObject> cluster) {
     if (cluster.isMultiple) {
       showModalBottomSheet(
+        isScrollControlled: true,
         context: context,
-        builder: (context) => MyList(
-          cameras: cluster.items.toList(),
-          fetchCameraData: () {
-            widget.fetchCameraData();
-            // _updateClusterManager();
-          },
-          // onSearch: (input) {
-          // widget.onSearch(input);
-          // _updateClusterManager();
-          // },
+        builder: (context) => Container(
+          height: MediaQuery.of(context).size.height * 0.75,
+          child: MyList(
+            cameras: cluster.items.toList(),
+            fetchCameraData: () async {
+              await widget.fetchCameraData();
+            },
+          ),
         ),
-      ).whenComplete(() {
-        // _updateClusterManager();
-      });
+      ).whenComplete(() {});
     } else {
-      _onMarkerTapped(cluster.items.first);
+      _showCameraDetails(cluster.items.first);
+      // _onMarkerTapped(cluster.items.first);
     }
   }
 
@@ -171,28 +142,53 @@ class _MapPageState extends State<MapPage> {
     return BitmapDescriptor.fromBytes(data.buffer.asUint8List());
   }
 
+  // void _showCameraDetails(LTACameraObject camera) {
+  //   showModalBottomSheet(
+  //       // showDragHandle: true,
+  //       enableDrag: true,
+  //       isScrollControlled: true,
+  //       context: context,
+  //       builder: (BuildContext context) => Container(
+  //           height: MediaQuery.of(context).size.height * 0.75,
+  //           child: CharacterDetailsPage(
+  //             camera: camera,
+  //             fetchCameraData: widget.fetchCameraData(),
+  //           ))
+  //       // {
+  //       //   return Padding(
+  //       //     padding: const EdgeInsets.all(16.0),
+  //       //     child: Column(
+  //       //       mainAxisSize: MainAxisSize.min,
+  //       //       children: <Widget>[
+  //       //         Image.network(camera.image),
+  //       //         SizedBox(height: 16.0),
+  //       //         Text(camera.name,
+  //       //             style:
+  //       //                 TextStyle(fontSize: 20.0, fontWeight: FontWeight.bold)),
+  //       //         SizedBox(height: 8.0),
+  //       //         Text(camera.timestamp),
+  //       //         SizedBox(height: 8.0),
+  //       //         Text('Camera ID: ${camera.cameraId}'),
+  //       //       ],
+  //       //     ),
+  //       //   );
+  //       // },
+  //       );
+
+  // }
   void _showCameraDetails(LTACameraObject camera) {
     showModalBottomSheet(
+      isScrollControlled: true,
       context: context,
-      builder: (BuildContext context) {
-        return Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: <Widget>[
-              Image.network(camera.image),
-              SizedBox(height: 16.0),
-              Text(camera.name,
-                  style:
-                      TextStyle(fontSize: 20.0, fontWeight: FontWeight.bold)),
-              SizedBox(height: 8.0),
-              Text(camera.timestamp),
-              SizedBox(height: 8.0),
-              Text('Camera ID: ${camera.cameraId}'),
-            ],
-          ),
-        );
-      },
+      builder: (BuildContext context) => Container(
+        height: MediaQuery.of(context).size.height * 0.75,
+        child: CharacterDetailsPage(
+          camera: camera,
+          fetchCameraData: () async {
+            await widget.fetchCameraData();
+          },
+        ),
+      ),
     );
   }
 
@@ -204,6 +200,12 @@ class _MapPageState extends State<MapPage> {
     }
   }
 
+  void _onCameraMove(CameraPosition position) {
+    _manager.onCameraMove(position);
+    // _closeInfoWindow();
+    _initialCameraPosition = position;
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -211,18 +213,10 @@ class _MapPageState extends State<MapPage> {
         children: [
           GoogleMap(
             onMapCreated: _onMapCreated,
-            initialCameraPosition: const CameraPosition(
-              target: LatLng(
-                  1.3521, 103.8198), // Singapore's latitude and longitude
-              zoom: 11,
-            ),
+            initialCameraPosition: _initialCameraPosition,
             markers: markers,
-            onCameraMove: _manager.onCameraMove,
+            onCameraMove: _onCameraMove,
             onCameraIdle: _manager.updateMap,
-
-            // onCameraMoveStarted: () {
-            //   if (_isInfoWindowVisible) _closeInfoWindow();
-            // },
             trafficEnabled: true,
             onTap: (LatLng position) {
               _closeInfoWindow();

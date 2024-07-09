@@ -2,9 +2,21 @@ import 'package:flutter/material.dart';
 
 // Page
 import 'src/views/pages/home_page.dart';
+import 'dart:io';
 
 void main() {
+  HttpOverrides.global = MyHttpOverrides();
   runApp(const MyApp());
+}
+
+class MyHttpOverrides extends HttpOverrides {
+  @override
+  HttpClient createHttpClient(SecurityContext? context) {
+    final HttpClient httpClient = super.createHttpClient(context);
+    httpClient.connectionTimeout =
+        const Duration(seconds: 30); // Set the timeout here
+    return httpClient;
+  }
 }
 
 class MyApp extends StatelessWidget {
